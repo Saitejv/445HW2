@@ -72,6 +72,18 @@ def adaboost(X: np.ndarray, labels: np.ndarray, num_iterations: int) -> tuple[li
     for i in range(num_iterations):
         feature, threshold, operator = best_decision_stump(w, X, labels)
         print(f"decision stump {i}: x_{feature} {operator} {threshold}")
+        em = 0
+        predictions = []
+        for i in range(X.size[0]):
+            if(operator == '<'):
+                em += w[i] * (labels[i] != (X[i][feature] < threshold))
+            else:
+                em += w[i] * (labels[i] != (X[i][feature] > threshold))
+        
+            am = 0.5 + np.log((1-em)/em)
+
+        w = w* np.exp(-1 * labels * am * )
+
         # TODO: implement the rest of the AdaBoost algorithm
 
     return functions, alpha
@@ -89,6 +101,9 @@ def classify(functions: list[tuple[int, float, str]], alpha: np.ndarray, X: np.n
         predicted {-1, 1} labels
     """
     # TODO: implement the classification algorithm
+
+    for function, alpha in zip(functions,alpha):
+
     pass
 
 
