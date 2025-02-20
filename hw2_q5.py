@@ -72,18 +72,19 @@ def adaboost(X: np.ndarray, labels: np.ndarray, num_iterations: int) -> tuple[li
     for i in range(num_iterations):
         feature, threshold, operator = best_decision_stump(w, X, labels)
         print(f"decision stump {i}: x_{feature} {operator} {threshold}")
+        functions.append((feature, threshold, operator))
         em = 0
         predictions = []
-        for i in range(X.size[0]):
-            if(operator == '<'):
-                em += w[i] * (labels[i] != (X[i][feature] < threshold))
-            else:
-                em += w[i] * (labels[i] != (X[i][feature] > threshold))
-        
-            am = 0.5 + np.log((1-em)/em)
+        if(operator == '<'):
+            predictions = np.where(X[:, feature] < threshold, 1, -1)
+        else:
+            predictions = np.where(X[:, feature] > threshold, 1, -1)
 
-        w = w* np.exp(-1 * labels * am * )
+        em = np.sum(w * (labels != predictions))
+        alpha[i] = 0.5 * np.log((1-em)/em)
 
+        w = w * np.exp(-1 * labels * alpha[i]* predictions)
+        w = w/np.sum(w)
         # TODO: implement the rest of the AdaBoost algorithm
 
     return functions, alpha
@@ -101,12 +102,44 @@ def classify(functions: list[tuple[int, float, str]], alpha: np.ndarray, X: np.n
         predicted {-1, 1} labels
     """
     # TODO: implement the classification algorithm
+    n, d = X.shape
+    out = np.ones(n)
+    for function, a in zip(functions,alpha):
+        feature, threshold, operator = function
 
-    for function, alpha in zip(functions,alpha):
+        if(operator == '<'):
+            out += np.where(X[:, feature] < threshold, 1, -1) * a
+        else:
+            out += np.where(X[:, feature] > threshold, 1, -1) * a
+    
 
-    pass
+    return np.where(out > 0, 1, -1) 
 
 
+def loss(functions: list[tuple[int, float, str]], alpha: np.ndarray, X: np.ndarray, y: np.ndarray):
+    """Make predictions from the ensemble of decision stumps.
+
+    Args:
+        functions: list of trained decision stumps
+        alpha: weights of each decision stump
+        X: input data
+
+    Returns:
+        predicted {-1, 1} labels
+    """
+    # TODO: implement the classification algorithm
+    n, d = X.shape
+    out = np.ones(n)
+    for function, a in zip(functions,alpha):
+        feature, threshold, operator = function
+
+        if(operator == '<'):
+            out += np.where(X[:, feature] < threshold, 1, -1) * a
+        else:
+            out += np.where(X[:, feature] > threshold, 1, -1) * a
+    
+
+    print(np.exp(-1 * y * out))
 if __name__ == '__main__':
     X = np.array([
         [0.30, 0.15],
@@ -126,3 +159,5 @@ if __name__ == '__main__':
     t = classify(functions, alpha, X)
     print(f"actual labels:    {y}")
     print(f"predicted labels: {t}")
+
+    loss(functions, alpha, X, y)
